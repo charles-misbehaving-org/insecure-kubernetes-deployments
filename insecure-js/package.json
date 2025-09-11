@@ -12,6 +12,7 @@
     "semver": "5.4.1",
     "sequelize": "4.44.1",
     "debug": "4.4.1",
+    "ccnetviz": "1.0.19",
     "sqlite3": "^5.0.2"
   },
   "resolutions": {
