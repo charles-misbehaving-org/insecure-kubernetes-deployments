@@ -250,6 +250,83 @@ resource "aws_security_group" "ingress_nginx" {
 }
 
 # Install ingress-nginx using Helm
+# Public S3 bucket for hosting code - INTENTIONALLY INSECURE
+resource "aws_s3_bucket" "public_code" {
+  bucket = "public-code-${random_string.suffix.result}"
+
+  tags = merge(local.common_tags, {
+    Name = "public-code-bucket"
+    Date = "2026-05-04"
+  })
+}
+
+resource "aws_s3_bucket_public_access_block" "public_code" {
+  bucket = aws_s3_bucket.public_code.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "public_code" {
+  bucket = aws_s3_bucket.public_code.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.public_code.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.public_code]
+}
+
+# Public S3 bucket for data uploads - INTENTIONALLY INSECURE
+resource "aws_s3_bucket" "public_uploads" {
+  bucket = "public-uploads-${random_string.suffix.result}"
+
+  tags = merge(local.common_tags, {
+    Name = "public-uploads-bucket"
+    Date = "2026-05-04"
+  })
+}
+
+resource "aws_s3_bucket_public_access_block" "public_uploads" {
+  bucket = aws_s3_bucket.public_uploads.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "public_uploads" {
+  bucket = aws_s3_bucket.public_uploads.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.public_uploads.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.public_uploads]
+}
+
+# Install ingress-nginx using Helm
 resource "helm_release" "ingress_nginx" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
